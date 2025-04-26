@@ -89,7 +89,9 @@ export default function CreatePost() {
                 {display === 'form' && (
                     <div className="flex flex-col xl:flex-row">
                         <div className="flex w-full flex-col items-center gap-y-8">
-                            <ImagePreview files={files} />
+                            <div className="h-[calc(100vh-15rem)] w-full">
+                                <ImagePreview files={files} />
+                            </div>
                             {!isUploaded && (
                                 <>
                                     {uploadError && <p>{uploadError}</p>}
@@ -151,7 +153,7 @@ function ImagePreview({ files }: { files: File[] }) {
     };
 
     return (
-        <div className="relative flex h-[calc(100vh-20rem)] flex-col items-center p-3">
+        <div className="relative flex h-full flex-col items-center p-3">
             <button
                 className="group absolute left-0 h-full cursor-pointer px-8 disabled:cursor-not-allowed"
                 disabled={index === 0}
@@ -160,7 +162,7 @@ function ImagePreview({ files }: { files: File[] }) {
             >
                 <ArrowLeft className="opacity-75 group-hover:opacity-100 group-hover:group-disabled:opacity-75" />
             </button>
-            <img className="h-full max-w-full" src={url} alt={`Uploaded image ${index + 1}`} />
+            <img className="h-full max-w-full" style={{ objectFit: 'contain' }} src={url} alt={`Uploaded image ${index + 1}`} />
             <button
                 className="group absolute right-0 h-full cursor-pointer px-8 disabled:cursor-not-allowed"
                 disabled={index === files.length - 1}
