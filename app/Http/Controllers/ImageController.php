@@ -11,12 +11,6 @@ class ImageController extends Controller
 {
     public function upload(Request $request)
     {
-        /** @var \App\Models\User $user */
-        $user = $request->user();
-        $image = new Image();
-        $image->user_id = $user->getAuthIdentifier();
-        $image->save();
-
         $file = $request->file('image');
         Log::debug('Has file: ' . $request->hasFile('image'));
         Log::debug('Ext: ' . $file->extension());
@@ -25,11 +19,19 @@ class ImageController extends Controller
                 'image' => 'File harus berupa .jpg, .jpeg, .png'
             ]);
         }
-        
+
         $ext = $file->extension();
+
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        $image = new Image();
+        $image->user_id = $user->getAuthIdentifier();
+        $image->file_ext = $ext;
+        $image->save();
+        
         $filename = sprintf("%d.%s", $image->id, $ext);
 
-        $file->storeAs('images', $filename);
+        $file->storePubliclyAs('images', $filename, 'public');
 
         return response()->json([
             'id' => $image->id,
