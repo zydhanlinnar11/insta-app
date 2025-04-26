@@ -35,8 +35,8 @@ class PostController extends Controller
 
         $validated = $request->validate([
             'caption' => 'required|string|max:1024',
-            // 'image_ids' => 'required|array|max:5',
-            // 'image_ids.*' => 'required|integer|exists:images',
+            'image_ids' => 'required|array|max:5',
+            'image_ids.*' => 'required|integer|exists:images,id',
         ]);
 
         DB::transaction(function () use ($user, $validated) {
