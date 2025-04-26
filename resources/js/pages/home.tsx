@@ -1,8 +1,11 @@
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
+import ImagePreview from '@/components/image-preview';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { useEffect } from 'react';
+import axios from 'axios';
+import { CircleUserRound, Heart, TicketSlash } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -11,30 +14,98 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Home({ posts }: { posts: any }) {
+type PostImage = {
+    link: string;
+};
+
+type Post = {
+    id: number;
+    caption: string;
+    poster_username: string;
+    created_at: string; // ISO 8601 date string
+    images: PostImage[];
+    likes_count: number;
+    is_liked: boolean;
+};
+
+export default function Home({ posts }: { posts: Post[] }) {
+    const [mapLikedByPostId, setMapLikedByPostId] = useState<{ [key: number]: boolean }>({});
+    const [mapLikesCountByPostId, setMapLikesCountByPostId] = useState<{ [key: number]: number }>({});
+
     useEffect(() => {
-        console.log(posts);
-    }, []);
+        posts.forEach(({ id, is_liked, likes_count }) => {
+            setMapLikedByPostId((prev) => ({
+                ...prev,
+                [id]: is_liked,
+            }));
+            setMapLikesCountByPostId((prev) => ({
+                ...prev,
+                [id]: likes_count,
+            }));
+        });
+    }, [posts]);
+
+    const handleLikeButton = async (postId: number) => {
+        try {
+            const isLiked = mapLikedByPostId[postId];
+            await axios.post(route('posts.toggleLike', { post: postId }));
+            setMapLikedByPostId((prev) => ({
+                ...prev,
+                [postId]: !prev[postId],
+            }));
+            setMapLikesCountByPostId((prev) => ({
+                ...prev,
+                [postId]: prev[postId] + (isLiked ? -1 : 1),
+            }));
+        } catch (e) {}
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Home" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    <div className="border-sidebar-border/70 dark:border-sidebar-border relative aspect-video overflow-hidden rounded-xl border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="border-sidebar-border/70 dark:border-sidebar-border relative aspect-video overflow-hidden rounded-xl border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="border-sidebar-border/70 dark:border-sidebar-border relative aspect-video overflow-hidden rounded-xl border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+            {posts.length === 0 ? (
+                <div className="flex h-full items-center justify-center">
+                    <div className="flex flex-col items-center gap-y-4">
+                        <TicketSlash className="h-24 w-24" />
+                        <p className="text-center text-2xl font-medium">Currently, there are no posts available</p>
                     </div>
                 </div>
-                <div className="border-sidebar-border/70 dark:border-sidebar-border relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border md:min-h-min">
-                    <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+            ) : (
+                <div className="mx-auto flex w-full max-w-[48rem] flex-col p-4 sm:p-8">
+                    {posts.map((post, idx) => {
+                        const isLiked = mapLikedByPostId[post.id];
+                        const likesCount = mapLikesCountByPostId[post.id];
+
+                        return (
+                            <div key={post.id} className={cn(idx === posts.length - 1 ? null : 'border-b', 'pb-3')}>
+                                <div className="flex gap-x-3 p-4">
+                                    <CircleUserRound />
+                                    <span>{post.poster_username}</span>
+                                </div>
+                                <div className="h-72 xl:h-96">
+                                    <ImagePreview urls={post.images.map(({ link }) => link)} />
+                                </div>
+                                <div className="p-4">
+                                    <div className="flex gap-x-3 py-2">
+                                        <button className="hover:cursor-pointer hover:opacity-80" onClick={() => handleLikeButton(post.id)}>
+                                            <Heart fill={isLiked ? '#fb2c36' : undefined} className={isLiked ? 'text-red-500' : undefined} />
+                                        </button>
+                                        {/* <button className="hover:cursor-pointer hover:opacity-80">
+                                            <MessageSquare />
+                                        </button> */}
+                                    </div>
+                                    <p className="font-bold">
+                                        {likesCount} {likesCount === 1 ? 'like' : 'likes'}
+                                    </p>
+                                    <p>
+                                        <b>{post.poster_username}</b> {post.caption}
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
-            </div>
+            )}
         </AppLayout>
     );
 }

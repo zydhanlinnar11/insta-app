@@ -85,4 +85,10 @@ class PostController extends Controller
     {
         //
     }
+
+    public function toggleLike(Request $request, Post $post)
+    {
+        $user = $request->user();
+        $post->likes()->toggle([$user->id]);
+    }
 }

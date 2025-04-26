@@ -20,23 +20,17 @@ export default function ImagePreview({ urls }: { urls: string[] }) {
 
     return (
         <div className="relative flex h-full flex-col items-center p-3">
-            <button
-                className="group absolute left-0 h-full cursor-pointer px-8 disabled:cursor-not-allowed"
-                disabled={index === 0}
-                onClick={previousPhoto}
-                title="Previous"
-            >
-                <ArrowLeft className="opacity-75 group-hover:opacity-100 group-hover:group-disabled:opacity-75" />
-            </button>
+            {index !== 0 && (
+                <button className="group absolute left-0 h-full cursor-pointer px-8" onClick={previousPhoto} title="Previous">
+                    <ArrowLeft className="opacity-75 group-hover:opacity-100" />
+                </button>
+            )}
             <img className="h-full max-w-full" style={{ objectFit: 'contain' }} src={url} alt={`Uploaded image ${index + 1}`} />
-            <button
-                className="group absolute right-0 h-full cursor-pointer px-8 disabled:cursor-not-allowed"
-                disabled={index === urls.length - 1}
-                onClick={nextPhoto}
-                title="Next"
-            >
-                <ArrowRight className="opacity-75 group-hover:opacity-100 group-hover:group-disabled:opacity-75" />
-            </button>
+            {index !== urls.length - 1 && (
+                <button className="group absolute right-0 h-full cursor-pointer px-8" onClick={nextPhoto} title="Next">
+                    <ArrowRight className="opacity-75 group-hover:opacity-100" />
+                </button>
+            )}
         </div>
         // </ReactCrop>
     );
