@@ -44,6 +44,11 @@ class PostController extends Controller
             $post->user_id = $user->getAuthIdentifier();
             $post->caption = $validated['caption'];
             $post->save();
+
+            $images = $validated['image_ids'];
+            DB::table('images')
+                ->whereIn('id', $images)
+                ->update(['post_id' => $post->id]);
         });
         
         return to_route('home');
