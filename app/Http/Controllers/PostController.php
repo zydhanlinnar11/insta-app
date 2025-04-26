@@ -46,7 +46,7 @@ class PostController extends Controller
             $post->save();
         });
         
-        return to_route('dashboard');
+        return to_route('home');
     }
 
     /**
