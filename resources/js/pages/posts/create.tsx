@@ -1,3 +1,4 @@
+import ImagePreview from '@/components/image-preview';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -7,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import axios from 'axios';
-import { ArrowLeft, ArrowRight, CircleAlert, Images, LoaderCircle } from 'lucide-react';
+import { CircleAlert, Images, LoaderCircle } from 'lucide-react';
 import { ChangeEventHandler, DragEventHandler, FormEventHandler, MouseEventHandler, useRef, useState } from 'react';
 
 const allowedFileTypes = ['jpg', 'jpeg', 'png'];
@@ -90,7 +91,7 @@ export default function CreatePost() {
                     <div className="flex flex-col xl:flex-row">
                         <div className="flex w-full flex-col items-center gap-y-8">
                             <div className="h-[calc(100vh-15rem)] w-full">
-                                <ImagePreview files={files} />
+                                <ImagePreview urls={files.map((file) => URL.createObjectURL(file))} />
                             </div>
                             {!isUploaded && (
                                 <>
@@ -131,48 +132,6 @@ export default function CreatePost() {
                 )}
             </div>
         </AppLayout>
-    );
-}
-
-function ImagePreview({ files }: { files: File[] }) {
-    const [index, setIndex] = useState(0);
-    const file = files[index];
-    const url = URL.createObjectURL(file);
-
-    const previousPhoto = () => {
-        setIndex((prev) => {
-            if (prev === 0) return prev;
-            return prev - 1;
-        });
-    };
-    const nextPhoto = () => {
-        setIndex((prev) => {
-            if (prev === files.length - 1) return prev;
-            return prev + 1;
-        });
-    };
-
-    return (
-        <div className="relative flex h-full flex-col items-center p-3">
-            <button
-                className="group absolute left-0 h-full cursor-pointer px-8 disabled:cursor-not-allowed"
-                disabled={index === 0}
-                onClick={previousPhoto}
-                title="Previous"
-            >
-                <ArrowLeft className="opacity-75 group-hover:opacity-100 group-hover:group-disabled:opacity-75" />
-            </button>
-            <img className="h-full max-w-full" style={{ objectFit: 'contain' }} src={url} alt={`Uploaded image ${index + 1}`} />
-            <button
-                className="group absolute right-0 h-full cursor-pointer px-8 disabled:cursor-not-allowed"
-                disabled={index === files.length - 1}
-                onClick={nextPhoto}
-                title="Next"
-            >
-                <ArrowRight className="opacity-75 group-hover:opacity-100 group-hover:group-disabled:opacity-75" />
-            </button>
-        </div>
-        // </ReactCrop>
     );
 }
 
