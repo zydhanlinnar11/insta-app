@@ -3,8 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { TextArea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
+import axios from 'axios';
 import { ArrowLeft, ArrowRight, CircleAlert, Images, LoaderCircle } from 'lucide-react';
 import { ChangeEventHandler, DragEventHandler, FormEventHandler, MouseEventHandler, useRef, useState } from 'react';
 
@@ -32,17 +34,35 @@ export default function CreatePost() {
     const [files, setFiles] = useState<File[]>([]);
     const [display, setDisplay] = useState<'picker' | 'form'>('picker');
     const [isUploaded, setUploaded] = useState(false);
+    const [uploadError, setUploadError] = useState('');
+    const [isUploading, setUploading] = useState(false);
 
     const showImages = (files: File[]) => {
         setFiles(files);
         setDisplay('form');
     };
 
-    const uploadImages = () => {
+    const uploadImages = async () => {
+        setUploading(true);
         try {
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const res = await axios.postForm(route('images.upload'), formData);
+                const { id: imageId }: { id: number } = res.data;
+
+                setData((prev) => ({
+                    ...prev,
+                    image_ids: [...prev.image_ids, imageId],
+                }));
+            }
             setUploaded(true);
         } catch (e) {
+            setUploadError('Unable to upload images, please try again later.');
+            console.error(e);
         } finally {
+            setUploading(false);
         }
     };
 
@@ -56,45 +76,58 @@ export default function CreatePost() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Post" />
-            {display === 'picker' && <ImagePicker onSuccess={showImages} />}
-            {display === 'form' && (
-                <div className="flex flex-col xl:flex-row">
-                    <div className="flex w-full flex-col items-center gap-y-8">
-                        <ImagePreview files={files} />
-                        {!isUploaded && (
-                            <Button variant={'outline'} className="w-fit cursor-pointer" onClick={uploadImages}>
-                                Next
-                            </Button>
+            <div className="relative h-full">
+                <div
+                    className={cn(
+                        'absolute flex h-full w-full items-center justify-center transition-colors',
+                        isUploading ? 'z-10 bg-black/60' : '-z-10',
+                    )}
+                >
+                    <LoaderCircle className="h-12 w-12 animate-spin" />
+                </div>
+                {display === 'picker' && <ImagePicker onSuccess={showImages} />}
+                {display === 'form' && (
+                    <div className="flex flex-col xl:flex-row">
+                        <div className="flex w-full flex-col items-center gap-y-8">
+                            <ImagePreview files={files} />
+                            {!isUploaded && (
+                                <>
+                                    {uploadError && <p>{uploadError}</p>}
+                                    <Button variant={'outline'} className="w-fit cursor-pointer" onClick={uploadImages}>
+                                        Next
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+                        {isUploaded && (
+                            <div className="xl:w-4/12">
+                                <form className="flex flex-col gap-6 p-4" onSubmit={submit}>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="caption">Caption</Label>
+                                        <TextArea
+                                            id="caption"
+                                            required
+                                            autoFocus
+                                            tabIndex={1}
+                                            autoComplete="caption"
+                                            value={data.caption}
+                                            onChange={(e) => setData('caption', e.target.value)}
+                                            placeholder="Write your caption here..."
+                                            rows={8}
+                                        />
+                                        <InputError message={errors.caption} />
+                                    </div>
+
+                                    <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
+                                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                                        Create
+                                    </Button>
+                                </form>
+                            </div>
                         )}
                     </div>
-                    {isUploaded && (
-                        <div className="xl:w-4/12">
-                            <form className="flex flex-col gap-6 p-4" onSubmit={submit}>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="caption">Caption</Label>
-                                    <TextArea
-                                        id="caption"
-                                        required
-                                        autoFocus
-                                        tabIndex={1}
-                                        autoComplete="caption"
-                                        value={data.caption}
-                                        onChange={(e) => setData('caption', e.target.value)}
-                                        placeholder="Write your caption here..."
-                                        rows={8}
-                                    />
-                                    <InputError message={errors.caption} />
-                                </div>
-
-                                <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
-                                    {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                                    Create
-                                </Button>
-                            </form>
-                        </div>
-                    )}
-                </div>
-            )}
+                )}
+            </div>
         </AppLayout>
     );
 }
