@@ -33,4 +33,6 @@ RUN echo "Asia/Jakarta" > /etc/timezone \
     && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && rm /usr/bin/composer
 
+EXPOSE 80
+
 CMD ["sh", "-c", "php artisan optimize && /usr/bin/supervisord -c /etc/supervisor.d/supervisord.ini"]
