@@ -23,7 +23,7 @@ WORKDIR /var/www/html
 COPY . .
 COPY --from=composer:2.8.8 /usr/bin/composer /usr/bin/composer
 RUN composer install --optimize-autoloader --no-dev
-COPY --from=builder /var/www/html/public/build /var/www/html/public/
+COPY --from=builder /var/www/html/public/build /var/www/html/public/build
 
 RUN echo "Asia/Jakarta" > /etc/timezone \
     # Configure supervisor
