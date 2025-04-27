@@ -24,7 +24,7 @@ RUN apk add --no-cache \
 
 COPY --from=composer:2.8.8 /usr/bin/composer /usr/bin/composer
 COPY --from=installer /app/vendor /app/node_modules /app/
-COPY . .
+COPY . /app/
 RUN composer dump-autoload -o
 RUN npm run build
 
