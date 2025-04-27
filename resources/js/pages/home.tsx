@@ -1,10 +1,12 @@
 import ImagePreview from '@/components/image-preview';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
-import { CircleUserRound, Heart, TicketSlash } from 'lucide-react';
+import { CircleUserRound, Heart, TicketSlash, Trash } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -26,11 +28,15 @@ type Post = {
     images: PostImage[];
     likes_count: number;
     is_liked: boolean;
+    can_delete: boolean;
 };
 
 export default function Home({ posts }: { posts: Post[] }) {
     const [mapLikedByPostId, setMapLikedByPostId] = useState<{ [key: number]: boolean }>({});
     const [mapLikesCountByPostId, setMapLikesCountByPostId] = useState<{ [key: number]: number }>({});
+    const [isModalDeleteOpen, setModalDeleteOpen] = useState(false);
+    const [modalDeletePostId, setModalDeletePostId] = useState(0);
+    const [isDeleting, setDeleting] = useState(false);
 
     useEffect(() => {
         posts.forEach(({ id, is_liked, likes_count }) => {
@@ -60,9 +66,52 @@ export default function Home({ posts }: { posts: Post[] }) {
         } catch (e) {}
     };
 
+    const openDeleteModal = (postId: number) => {
+        setModalDeleteOpen(true);
+        setModalDeletePostId(postId);
+    };
+
+    const closeDeleteModal = () => setModalDeleteOpen(false);
+
+    const deletePost = async (postId: number) => {
+        try {
+            setDeleting(true);
+            await axios.delete(route('posts.destroy', { post: postId }));
+            router.reload();
+            closeDeleteModal();
+        } catch (e) {
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Home" />
+            <Dialog open={isModalDeleteOpen} onOpenChange={setModalDeleteOpen}>
+                <DialogContent>
+                    <DialogTitle>Are you sure you want to delete this post?</DialogTitle>
+                    <DialogDescription>Once your post is deleted, all of its likes and comments will also be permanently deleted.</DialogDescription>
+                    <DialogFooter className="gap-2">
+                        <DialogClose asChild>
+                            <Button variant="secondary" onClick={closeDeleteModal} className="cursor-pointer">
+                                Cancel
+                            </Button>
+                        </DialogClose>
+
+                        <Button
+                            variant="destructive"
+                            disabled={isDeleting}
+                            asChild
+                            className="cursor-pointer"
+                            onClick={() => deletePost(modalDeletePostId)}
+                        >
+                            <button>Delete post</button>
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {posts.length === 0 ? (
                 <div className="flex h-full items-center justify-center">
                     <div className="flex flex-col items-center gap-y-4">
@@ -78,9 +127,17 @@ export default function Home({ posts }: { posts: Post[] }) {
 
                         return (
                             <div key={post.id} className={cn(idx === posts.length - 1 ? null : 'border-b', 'pb-3')}>
-                                <div className="flex gap-x-3 p-4">
-                                    <CircleUserRound />
-                                    <span>{post.poster_username}</span>
+                                <div className="flex items-center justify-between p-4">
+                                    <div className="flex gap-x-3">
+                                        <CircleUserRound />
+                                        <span>{post.poster_username}</span>
+                                    </div>
+
+                                    {post.can_delete && (
+                                        <Button variant={'outline'} className="w-fit cursor-pointer" onClick={() => openDeleteModal(post.id)}>
+                                            <Trash className="text-red-500" />
+                                        </Button>
+                                    )}
                                 </div>
                                 <div className="h-72 xl:h-96">
                                     <ImagePreview urls={post.images.map(({ link }) => link)} />

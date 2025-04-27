@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -39,6 +40,7 @@ class HomeController extends Controller
                 'images' => $images,
                 'likes_count' => $post->likes_count,
                 'is_liked' => $post->is_liked,
+                'can_delete' => Gate::allows('delete-post', $post),
             ];
         }
         
