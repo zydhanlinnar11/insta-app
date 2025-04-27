@@ -27,6 +27,7 @@ type Comment = {
     comment: string;
     commenter_username: string;
     created_at: string; // ISO 8601 date string
+    can_delete: boolean;
 };
 
 type Post = {
@@ -48,6 +49,8 @@ export default function Home({ posts }: { posts: Post[] }) {
     const [isModalDeleteOpen, setModalDeleteOpen] = useState(false);
     const [modalDeletePostId, setModalDeletePostId] = useState(0);
     const [isDeleting, setDeleting] = useState(false);
+    const [isModalDeleteCommentOpen, setModalDeleteCommentOpen] = useState(false);
+    const [modalDeleteCommentId, setModalDeleteCommentId] = useState(0);
 
     useEffect(() => {
         posts.forEach(({ id, is_liked, likes_count }) => {
@@ -96,6 +99,25 @@ export default function Home({ posts }: { posts: Post[] }) {
         }
     };
 
+    const openDeleteCommentModal = (postId: number) => {
+        setModalDeleteCommentOpen(true);
+        setModalDeleteCommentId(postId);
+    };
+
+    const closeDeleteCommentModal = () => setModalDeleteCommentOpen(false);
+
+    const deleteComment = async (commentId: number) => {
+        try {
+            setDeleting(true);
+            await axios.delete(route('posts.deleteComment', { comment: commentId }));
+            router.reload();
+            closeDeleteCommentModal();
+        } catch (e) {
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Home" />
@@ -118,6 +140,29 @@ export default function Home({ posts }: { posts: Post[] }) {
                             onClick={() => deletePost(modalDeletePostId)}
                         >
                             <button>Delete post</button>
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={isModalDeleteCommentOpen} onOpenChange={setModalDeleteCommentOpen}>
+                <DialogContent>
+                    <DialogTitle>Are you sure you want to delete this comment?</DialogTitle>
+                    <DialogDescription>Your comment will be permanently deleted.</DialogDescription>
+                    <DialogFooter className="gap-2">
+                        <DialogClose asChild>
+                            <Button variant="secondary" onClick={closeDeleteCommentModal} className="cursor-pointer">
+                                Cancel
+                            </Button>
+                        </DialogClose>
+
+                        <Button
+                            variant="destructive"
+                            disabled={isDeleting}
+                            asChild
+                            className="cursor-pointer"
+                            onClick={() => deleteComment(modalDeleteCommentId)}
+                        >
+                            <button>Delete comment</button>
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -182,11 +227,24 @@ export default function Home({ posts }: { posts: Post[] }) {
                                             </div>
                                         ) : (
                                             post.comments.map((comment) => (
-                                                <div className="py-3">
-                                                    <p key={comment.id}>
-                                                        <b>{comment.commenter_username}</b> {comment.comment}
-                                                    </p>
-                                                    <small className="opacity-80">{new Date(comment.created_at).toLocaleString()}</small>
+                                                <div className="flex justify-between py-3">
+                                                    <div>
+                                                        <p key={comment.id}>
+                                                            <b>{comment.commenter_username}</b> {comment.comment}
+                                                        </p>
+                                                        <small className="opacity-80">{new Date(comment.created_at).toLocaleString()}</small>
+                                                    </div>
+
+                                                    {comment.can_delete && (
+                                                        <Button
+                                                            variant={'outline'}
+                                                            className="w-fit cursor-pointer"
+                                                            onClick={() => openDeleteCommentModal(comment.id)}
+                                                            size={'sm'}
+                                                        >
+                                                            <Trash className="text-red-500" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             ))
                                         )}

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -33,11 +34,14 @@ class HomeController extends Controller
             }
             $comments = [];
             foreach($post->userCommenters as $userCommenter) {
+                $comment = new Comment();
+                $comment->user_id = $userCommenter->id;
                 $comments[] = [
                     'id' => $userCommenter->pivot->id,
                     'comment' => $userCommenter->pivot->comment,
                     'created_at' => $userCommenter->pivot->created_at,
                     'commenter_username' => $userCommenter->username,
+                    'can_delete' => Gate::allows('delete-comment', $comment),
                 ];
             }
 

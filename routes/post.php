@@ -9,4 +9,5 @@ Route::middleware('auth')->group(function () {
     Route::post('posts/{post}/toggle-like', [PostController::class, 'toggleLike'])->name('posts.toggleLike');
     Route::delete('posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
     Route::post('posts/{post}/comments', [PostController::class, 'addComment'])->name('posts.addComment');
+    Route::delete('comments/{comment}', [PostController::class, 'deleteComment'])->name('posts.deleteComment');
 });

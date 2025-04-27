@@ -92,4 +92,11 @@ class PostController extends Controller
         $comment->post_id = $post->id;
         $comment->save();
     }
+
+    public function deleteComment(Comment $comment)
+    {
+        Gate::authorize('delete-comment', $comment);
+        
+        $comment->delete();
+    }
 }
