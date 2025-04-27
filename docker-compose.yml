@@ -1,7 +1,7 @@
 services:
   insta-app:
     container_name: insta-app
-    image: docker.io/zydhanlinnar11/insta-app:latest
+    image: docker.io/zydhanlinnar11/insta-app:main
     ports:
       - 80:80
     env_file: .env
