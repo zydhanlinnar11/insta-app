@@ -23,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if($this->app->environment('production')) {
+            \URL::forceScheme('https');
+        }
         Gate::define('delete-post', function (User $user, Post $post) {
             return $user->id === $post->user_id;
         });
