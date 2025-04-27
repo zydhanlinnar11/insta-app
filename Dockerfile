@@ -1,31 +1,16 @@
 FROM php@sha256:635da5d54fcd6bc2c4355984717c6b3ab798a18a1595861743af0f795e380f24 AS base
 
-FROM base AS installer
-
-WORKDIR /app
-RUN apk add --no-cache \
-    nodejs \
-    npm
-
-COPY package.json package-lock.json /app/
-RUN npm ci
-
-# Install Composer
-COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
-COPY composer.json composer.lock /app/
-RUN composer install --no-autoloader --no-dev
+WORKDIR /var/www/html
 
 FROM base AS builder
 
-WORKDIR /app
 RUN apk add --no-cache \
     nodejs \
     npm
 
-COPY --from=composer:2.8.8 /usr/bin/composer /usr/bin/composer
-COPY --from=installer /app/vendor /app/node_modules /app/
-COPY . /app/
-RUN composer dump-autoload -o
+COPY package.json package-lock.json ./
+RUN npm ci 
+COPY . .
 RUN npm run build
 
 FROM base AS runner
@@ -36,13 +21,16 @@ COPY build/php-jakarta-timezone.ini /usr/local/etc/php/conf.d/php-jakarta-timezo
 
 WORKDIR /var/www/html
 COPY . .
-COPY --from=builder /app/vendor .
-COPY --from=builder /app/public/build .
+COPY --from=composer:2.8.8 /usr/bin/composer /usr/bin/composer
+RUN composer install --optimize-autoloader --no-dev
+COPY --from=builder /var/www/html/public/build /var/www/html/public/
+
 RUN echo "Asia/Jakarta" > /etc/timezone \
     # Configure supervisor
     && apk add --no-cache supervisor nginx \
     && mkdir -p /var/log/supervisord/ \
     && php artisan storage:link \
-    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && rm /usr/bin/composer
 
 CMD ["sh", "-c", "php artisan optimize && /usr/bin/supervisord -c /etc/supervisor.d/supervisord.ini"]
