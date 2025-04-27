@@ -1,0 +1,9 @@
+services:
+  insta-app:
+    container_name: insta-app
+    image: docker.io/zydhanlinnar11/insta-app:latest
+    ports:
+      - 80:80
+    env_file: .env
+    volumes:
+      - ./db.sqlite:/var/www/html/db.sqlite
