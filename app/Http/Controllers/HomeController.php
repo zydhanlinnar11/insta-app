@@ -14,7 +14,7 @@ class HomeController extends Controller
     {
         $userId = $request->user()->id;
 
-        $posts = Post::with('user', 'images')
+        $posts = Post::with('user', 'images', 'userCommenters')
             ->withCount('likes')
             ->withExists(['likes AS is_liked' => function ($query) use ($userId) {
                 $query->where('user_id', $userId);
@@ -31,6 +31,15 @@ class HomeController extends Controller
                     'link' => Storage::url(sprintf("images/%d.%s", $image->id, $image->file_ext)),
                 ];
             }
+            $comments = [];
+            foreach($post->userCommenters as $userCommenter) {
+                $comments[] = [
+                    'id' => $userCommenter->pivot->id,
+                    'comment' => $userCommenter->pivot->comment,
+                    'created_at' => $userCommenter->pivot->created_at,
+                    'commenter_username' => $userCommenter->username,
+                ];
+            }
 
             $data[] = [
                 'id' => $post->id,
@@ -41,6 +50,7 @@ class HomeController extends Controller
                 'likes_count' => $post->likes_count,
                 'is_liked' => $post->is_liked,
                 'can_delete' => Gate::allows('delete-post', $post),
+                'comments' => $comments,
             ];
         }
         

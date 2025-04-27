@@ -2,22 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class PostController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -56,14 +50,6 @@ class PostController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
@@ -92,5 +78,18 @@ class PostController extends Controller
     {
         $user = $request->user();
         $post->likes()->toggle([$user->id]);
+    }
+
+    public function addComment(Request $request, Post $post)
+    {
+        $validated = $request->validate([
+            'comment' => 'required|string|max:255',
+        ]);
+
+        $comment = new Comment();
+        $comment->comment = $validated['comment'];
+        $comment->user_id = $request->user()->getAuthIdentifier();
+        $comment->post_id = $post->id;
+        $comment->save();
     }
 }

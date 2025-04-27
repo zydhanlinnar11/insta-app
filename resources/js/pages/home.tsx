@@ -1,13 +1,15 @@
 import ImagePreview from '@/components/image-preview';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import axios from 'axios';
-import { CircleUserRound, Heart, TicketSlash, Trash } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { CircleUserRound, Heart, LoaderCircle, Send, TicketSlash, Trash } from 'lucide-react';
+import { FormEventHandler, useEffect, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -20,6 +22,13 @@ type PostImage = {
     link: string;
 };
 
+type Comment = {
+    id: number;
+    comment: string;
+    commenter_username: string;
+    created_at: string; // ISO 8601 date string
+};
+
 type Post = {
     id: number;
     caption: string;
@@ -29,9 +38,11 @@ type Post = {
     likes_count: number;
     is_liked: boolean;
     can_delete: boolean;
+    comments: Comment[];
 };
 
 export default function Home({ posts }: { posts: Post[] }) {
+    // console.log(posts);
     const [mapLikedByPostId, setMapLikedByPostId] = useState<{ [key: number]: boolean }>({});
     const [mapLikesCountByPostId, setMapLikesCountByPostId] = useState<{ [key: number]: number }>({});
     const [isModalDeleteOpen, setModalDeleteOpen] = useState(false);
@@ -149,14 +160,38 @@ export default function Home({ posts }: { posts: Post[] }) {
                                         </button>
                                         {/* <button className="hover:cursor-pointer hover:opacity-80">
                                             <MessageSquare />
-                                        </button> */}
+                                            </button> */}
                                     </div>
                                     <p className="font-bold">
                                         {likesCount} {likesCount === 1 ? 'like' : 'likes'}
                                     </p>
-                                    <p>
-                                        <b>{post.poster_username}</b> {post.caption}
-                                    </p>
+                                    <div className="py-3">
+                                        <p>
+                                            <b>{post.poster_username}</b> {post.caption}
+                                        </p>
+                                        <small className="opacity-80">{new Date(post.created_at).toLocaleString()}</small>
+                                    </div>
+                                    <p className="text-lg font-semibold">Comments</p>
+                                    <div className="max-h-60 overflow-y-auto">
+                                        {post.comments.length === 0 ? (
+                                            <div className="flex items-center justify-center py-16">
+                                                <div className="flex flex-col items-center gap-y-4">
+                                                    <TicketSlash className="h-8 w-8" />
+                                                    <p className="text-center font-medium">Currently, there are no comments available</p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            post.comments.map((comment) => (
+                                                <div className="py-3">
+                                                    <p key={comment.id}>
+                                                        <b>{comment.commenter_username}</b> {comment.comment}
+                                                    </p>
+                                                    <small className="opacity-80">{new Date(comment.created_at).toLocaleString()}</small>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                    <CommentForm postId={post.id} />
                                 </div>
                             </div>
                         );
@@ -164,5 +199,44 @@ export default function Home({ posts }: { posts: Post[] }) {
                 </div>
             )}
         </AppLayout>
+    );
+}
+
+type CommentForm = {
+    comment: string;
+};
+
+function CommentForm({ postId }: { postId: number }) {
+    const { data, setData, post, processing, errors, reset } = useForm<Required<CommentForm>>({
+        comment: '',
+    });
+
+    const submit: FormEventHandler = (e) => {
+        e.preventDefault();
+        post(route('posts.addComment', { post: postId }), {
+            onSuccess: () => reset('comment'),
+        });
+    };
+
+    return (
+        <form className="flex flex-col gap-2" onSubmit={submit}>
+            <div className="flex gap-2">
+                <Input
+                    id="comment"
+                    type="comment"
+                    required
+                    autoFocus
+                    tabIndex={1}
+                    autoComplete="comment"
+                    value={data.comment}
+                    onChange={(e) => setData('comment', e.target.value)}
+                    placeholder="Write down your comment here..."
+                />
+                <Button type="submit" className="w-fit cursor-pointer" disabled={processing}>
+                    {processing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+            </div>
+            <InputError message={errors.comment} />
+        </form>
     );
 }

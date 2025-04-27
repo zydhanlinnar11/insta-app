@@ -23,4 +23,9 @@ class Post extends Model
     {
         return $this->belongsToMany(User::class, 'likes', 'post_id', 'user_id');
     }
+
+    public function userCommenters(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'comments', 'post_id', 'user_id')->withPivot('id', 'comment', 'created_at');
+    }
 }
